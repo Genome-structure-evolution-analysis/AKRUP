@@ -5,7 +5,7 @@ AKRUP: ancestral karyotype reconstruction universal pipeline
 
 |         |                                                 |
 | ------- | ----------------------------------------------- |
-| Author  | wangjiqi                                        |
+| Author  | wangjiaqi                                        |
 | Email   | <wangjiaqiky@163.com>                           |
 | License | [BSD](http://creativecommons.org/licenses/BSD/) |
 
@@ -35,11 +35,10 @@ python setup.py build install
   
 
 **Dependent third party software that has been integrated：**
+|         |                                                 |
+| ------- | ----------------------------------------------- |
+|  **clustalw2**  | **[Larkin et al., 2007](https://academic.oup.com/bioinformatics/article/23/21/2947/371686)**  |
+| **ColinearScan** | **[Wang et al., 2006](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-447)** |
+|    **blast+**    | **[Camacho et al., 2009](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-10-421)** |
 
-| **clustalw2**    | **[Larkin et al., 2007](Clustal W and Clustal X version 2.0)** |
-| ---------------- | ------------------------------------------------------------ |
-| **ColinearScan** | **[Wang et al., 2006](Statistical inference of chromosomal homology based on gene colinearity and applications to Arabidopsis and rice)** |
-| **blast+**       | **[Camacho et al., 2009](BLAST+: architecture and applications)** |
-
-## 
 
