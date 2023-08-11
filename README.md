@@ -18,10 +18,11 @@ Include a "from the bottom up On "ancestral karyotype inference  and a" top-down
 
 ## Installation
 
-~~~bash
-pip
-python setup.py build install
-~~~
++ **Pypi**
+
+  ~~~
+  pip install AKRUP
+  ~~~
 
 
 
@@ -44,4 +45,19 @@ python setup.py build install
 | **ColinearScan** | **[Wang et al., 2006](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-447)** |
 |    **blast+**    | **[Camacho et al., 2009](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-10-421)** |
 
+
+
+## Tips
+
++ Default parameters, configuration files and usage instructions for all subroutines of the AKRUP software are provided. Please consult the documentation at the [Wiki](https://github.com/Genome-structure-evolution-analysis/AKRUP/wiki).
+
++ Detailed user tutorials and test data are provided. Please consult the documentation on [AKRUP-example](https://github.com/Genome-structure-evolution-analysis/AKRUP-example).
+
++ Provides ancestral karyotypes for multiple phylogenetic nodes of monocots. Please consult the documentation on [monocots-karyotype-evolution](https://github.com/Genome-structure-evolution-analysis/monocots-karyotype-evolution).
+
+  
+
+## Citations
+
+If you use AKRUP for  your work, please cite:
 
