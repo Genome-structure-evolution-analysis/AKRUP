@@ -1,7 +1,8 @@
 # AKRUP
+
+[![PyPI](https://img.shields.io/pypi/v/AKRUP)](https://pypi.org/project/AKRUP/)
+
 AKRUP: Ancestral Karyotype Reconstruction Universal Pipeline
-
-
 
 |         |                                                 |
 | ------- | ----------------------------------------------- |
@@ -18,6 +19,7 @@ Include a "from the bottom up On "ancestral karyotype inference  and a" top-down
 ## Installation
 
 ~~~bash
+pip
 python setup.py build install
 ~~~
 
