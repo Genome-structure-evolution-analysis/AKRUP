@@ -1,5 +1,5 @@
 # AKRUP
-AKRUP: ancestral karyotype reconstruction universal pipeline
+AKRUP: Ancestral Karyotype Reconstruction Universal Pipeline
 
 
 
@@ -25,16 +25,17 @@ python setup.py build install
 
 **The AKRUP requires the following dependencies :**
 
-- Python (>3.7) with *matplotlib, *biopython*, *click*,  *numpy*，*pandas*, and *scipy* libraries.
-  **Note that the current version no longer supports python 2**
+- Python (>3.7) with matplotlib, *biopython*, *click*,  *numpy*，*pandas*, and *scipy* libraries.
+  **Note that the current version no longer supports python 2.**
 
-- R with the ggridges and *ggplot2* packages
+- R with the ggridges and *ggplot2* packages.
 
-- perl with the *[BioPerl](https://metacpan.org/pod/BioPerl)*  packages
+- perl with the *[BioPerl](https://metacpan.org/pod/BioPerl)*  packages.
 
   
 
 **Dependent third party software that has been integrated：**
+
 |         |                                                 |
 | ------- | ----------------------------------------------- |
 |  **clustalw2**  | **[Larkin et al., 2007](https://academic.oup.com/bioinformatics/article/23/21/2947/371686)**  |

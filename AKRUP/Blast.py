@@ -24,8 +24,6 @@ class RunBlast:
 
         if self.num_thread == 'auto':
             self.num_thread = int(cpu_num/2)
-        # 可以通过不同系统进行判断 选择哪个软件
-        # 添加一个变量然后把软件赋值给此软件
         if platform_name == 'Windows':
             
             self.makeblastdb = os.path.join(current_path, 'ini/makeblastdb.exe')
@@ -52,4 +50,3 @@ class RunBlast:
             print(f'Error: {e}')
         finally:
             shutil.rmtree(f'{path}')
-

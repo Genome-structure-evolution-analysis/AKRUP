@@ -9,6 +9,7 @@ from AKRUP.funcbase import *
 
 cpu_num = cpu_count()
 current_path = AKRUP.__path__[0]
+
 platform_name = platform.platform().split('-')[0]
 
 
@@ -26,9 +27,6 @@ class RunColinearScan:
 
         for k, v in options:
             setattr(self, str(k), v)
-
-        # if self.num_process == 'auto':
-            # self.num_process = int(cpu_num/2)
 
         if self.num_thread == 'auto':
             self.num_thread = int(cpu_num/2)
@@ -155,7 +153,7 @@ class RunColinearScan:
             gff2 = self.get_gff(self.gff_file2)
             df = pd.read_csv(blast_path, sep='\t', names=list(
                 range(1, 13)), index_col=False)
-            df2 = df[df[12].astype('float') >= 100]
+            df2 = df[(df[12].astype('float') >= 100) & (df[2] != df[1])]
             df3 = df2.loc[:, [1, 2]]
             for li in df3.values.tolist():
                 flag = '\t'.join(li)
@@ -213,8 +211,6 @@ class RunColinearScan:
 
         return lens1, lens2, chr_num1
 
-
-    # 进行判断是什么系统，之后将软件环境复制给变量
     def run_colinearscan(self, len1, len2, pair_path, block_path):
         try:
             p = subprocess.call(f'{self.blockscan} -chr1len {len1} -chr2len '

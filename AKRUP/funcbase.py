@@ -4,7 +4,9 @@ import time
 import random
 import shutil
 import platform
+import threading
 import configparser
+from math import sqrt, pi
 from functools import reduce
 from itertools import groupby
 
@@ -14,10 +16,21 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+import AKRUP
+
+
 if os.name == "nt":
     os.system("")
 
 platform_name = platform.platform().split('-')[0]
+
+
+current_path = AKRUP.__path__[0]
+ini_path = os.path.join(current_path, 'ini')
+if platform_name == 'Linux':
+    os.system(f'chmod -R 775 {ini_path}')
+    # os.chmod(ini_path, 0o775)
+
 
 def load_conf(file, section):
     conf = configparser.ConfigParser()
@@ -43,8 +56,6 @@ def await_run(content, event):
         # print("\r{} {}".format(content, list_circle[i % 4]), end="")
         print("\r\033[0;32m{}....{}\033[0m".format(content, list_circle[i % 4]), end="")
         i += 1
-    print('\n')
-    print('\033[0;32mCompleted!!!!\033[0m')
 
 class DotplotBase:
     def __init__(self):
@@ -165,7 +176,7 @@ class DotplotBase:
         plt.text(0.5 * (2 * gl_start + gl), mark_y + 0.04, name, **self.align, **name_align)
 
     @staticmethod
-    def Rectangle(ax, loc, width, height, color, alpha, linew=None, style='-', flag=True):
+    def Rectangle(ax, loc, width, height, color, alpha, linew=None, style='-', flag=True, edgecolor=None):
         p = mpatches.Rectangle(loc, width, height, edgecolor=None, 
             facecolor=color, alpha=alpha, lw=linew, ls=style, fill=flag)
         ax.add_patch(p)
@@ -246,8 +257,8 @@ class DotplotBase:
         ancestor_lens = pd.DataFrame(ancestor_list)
         ancestor_lens[0] = ancestor_lens[0].astype(str)
         ancestor_lens[3] = ancestor_lens[3].astype(str)
-        ancestor_lens[4] = ancestor_lens[4].astype(int)
-        ancestor_lens[4] = ancestor_lens[4] / ancestor_lens[4].max()
+        # ancestor_lens[4] = ancestor_lens[4].astype(int)
+        # ancestor_lens[4] = ancestor_lens[4] / ancestor_lens[4].max()
         chrs = ancestor_lens[0].drop_duplicates().to_list()
         ax.bar(chrs, 1, color='white', alpha=0)
         step = 1/ancestor_lens[2].max()

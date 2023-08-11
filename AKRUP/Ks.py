@@ -1,6 +1,4 @@
-import logging
 import subprocess
-import threading
 from multiprocessing import cpu_count
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
@@ -158,4 +156,3 @@ class RunKs:
         finally:
             ks_sf.close()
             shutil.rmtree(f'{middle_path}')
-

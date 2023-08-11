@@ -1,7 +1,3 @@
-import os
-import re
-
-import numpy as np
 from AKRUP.funcbase import *
 
 
@@ -15,7 +11,7 @@ class BlockInfo:
         self.blast_file = 'blast file'
         self.block_file = 'block file'
         self.ks_file = 'ks file'
-        self.sf_file = 'block.information.csv'
+        self.save_file = 'block.information.csv'
         self.score = 100
         self.evalue = 1e-5
         self.repnum = 20
@@ -26,7 +22,7 @@ class BlockInfo:
             else:
                 setattr(self, str(k), v)
 
-        self.sf_file = open(self.sf_file, 'w')
+        self.save_file = open(self.save_file, 'w')
 
     @staticmethod
     def get_chr_num(gene):
@@ -108,11 +104,12 @@ class BlockInfo:
                 ks.append(-1)
         ks_va = '_'.join([str(x) for x in ks])
         ks = sorted(ks)
-        new_ks = list(filter(lambda x: x > 0, ks))
+        new_ks = list(filter(lambda x: float(x) > 0, ks))
         if len(new_ks) == 0:
             return ks_va, 0, 0
         ks_median = np.median(new_ks)
         ks_mean = np.mean(new_ks)
+
         return ks_va, ks_median, ks_mean
 
     def get_ks(self, ks_file):
@@ -126,7 +123,7 @@ class BlockInfo:
         return pair_ks
 
     def extract_blockinfo(self, blocks, blast_score, new_gff1, ge_chr1, new_gff2, ge_chr2, pair_ks, num_or=1):
-        self.sf_file.write(','.join(['num', 'chr1', 'chr2', 'start1', 'end1', 'start2', 'end2', 'pvalue', 'length',
+        self.save_file.write(','.join(['num', 'chr1', 'chr2', 'start1', 'end1', 'start2', 'end2', 'pvalue', 'length',
                              'ks_median', 'ks_average', 'hocv1', 'hocv2', 'hocv3', 'hocv4', 'hocv5', 'hocv6', 'hocv7', 
                              'hocv8', 'block1', 'block2', 'ks', 'density1', 'density2', 'CSR', 'module', 'Ts\n']))
 
@@ -157,7 +154,7 @@ class BlockInfo:
             rows = [str(v) for v in [num_or, chr1, chr2, start1, end1, start2, end2, p_value, length, ks_median, 
                                      ks_mean, hocvs[0], hocvs[1], hocvs[2], hocvs[3], hocvs[4], hocvs[5], hocvs[6], 
                                      hocvs[7], bk_pos1, bk_pos2, ks_va, dedsity1, dedsity2, '0', '0', '0']]
-            self.sf_file.write(','.join(rows) + '\n')
+            self.save_file.write(','.join(rows) + '\n')
             num_or += 1
 
     def run(self):

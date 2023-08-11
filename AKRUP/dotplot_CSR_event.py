@@ -8,15 +8,16 @@ class DotplotCsrKs(DotplotBase):
         DotplotBase.__init__(self)
         
         self.block_info = 'block info file'
-        self.top_ancestor_file = 'A.*.top.color.pos.txt'
-        self.left_ancestor_file = 'A.*.left.color.pos.txt'
+        self.top_ancestor_file = ''  # A.*.top.color.pos.txt
+        self.left_ancestor_file = ''  # A.*.left.color.pos.txt
         self.hocv_depth = 1
         self.hocv = -1
         self.block_num = 5
         self.ks_s, self.ks_e = 0, 3
         self.range_k = 0.3
-        self.peaks = 'a1,u,sigma'
+        self.peaks = ''  # a,u,sigma
         self.pkcolor = 'orange'
+        self.peakflag = 'TRUE'
 
         for k, v in options:
             if str(k) in ['hocv_depth', 'hocv', 'dpi', 'block_num', 'range_k']:
@@ -87,7 +88,8 @@ class DotplotCsrKs(DotplotBase):
 
     def plot_curve(self, data, ax2, range_k, color):
 
-        t=np.arange(data[1]-0.8,data[1]+0.8,0.01)
+        # t=np.arange(data[1]-0.8,data[1]+0.8,0.01)
+        t=np.arange(data[1]-1,data[1]+1,0.01)
         # for k in data:
         y=[0 for k in t]
             # for i in range(0,int((len(k)-1)/3)):    
@@ -98,7 +100,7 @@ class DotplotCsrKs(DotplotBase):
         ax2.vlines([data[1]], 0, max(y), linestyles='dashed', colors='red')
         maxy1, maxy2 = y[bisect(t, data[1]+range_k)], y[bisect(t, data[1]-range_k)]
         ax2.fill(t, y, facecolor=color, color=color)
-        plt.text(data[1], max(y)+0.06, f'μ={round(data[1], 3)}', color='black', fontsize=10, family='Times New Roman', horizontalalignment="center")
+        plt.text(data[1], max(y)+0.06, f'μ={round(data[1], 4)}', color='black', fontsize=10, family='Times New Roman', horizontalalignment="center")
         ax2.spines['top'].set_visible(False)
         ax2.spines['right'].set_visible(False)
         plt.xticks([])
@@ -137,9 +139,10 @@ class DotplotCsrKs(DotplotBase):
             x, y, colors = self.pair_positon1(genes_loc, self.pkcolor, self.peaks[1], self.range_k)  # 根据median
             plt.scatter(x, y, s=1.5, c=colors, alpha=0.5, edgecolors=None, linewidths=0, marker='o')
             
-            plt.text(0.05, 0.044, 'Speciation', color='black', fontsize=9, family='Times New Roman', verticalalignment="center", rotation=90)
-            ax2 = plt.axes([1/12, 0.016, 1.5/12, 0.05])
-            self.plot_curve(self.peaks, ax2, self.range_k, self.pkcolor)
+            if self.peakflag.upper() == 'TRUE':
+                plt.text(0.05, 0.044, 'Speciation', color='black', fontsize=9, family='Times New Roman', verticalalignment="center", rotation=90)
+                ax2 = plt.axes([1/12, 0.016, 1.5/12, 0.05])
+                self.plot_curve(self.peaks, ax2, self.range_k, self.pkcolor)
 
         root.set_xlim(0, 1)
         root.set_ylim(0, 1)

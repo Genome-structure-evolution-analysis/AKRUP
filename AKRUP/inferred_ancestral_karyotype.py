@@ -1,5 +1,4 @@
 import copy
-import random
 from itertools import islice, combinations, product, chain
 from collections import Counter
 from AKRUP.ancestral_dotplot import *
@@ -14,14 +13,16 @@ class ConservedAncestralRegions:
         self.wgds = 'spec1:wgdnum,spec2:wgdnum (spec2:2_2 WGD occurred twice after disagreement with refspec)'
         self.latin_name = ' refspec:refspec genome name,spec1:spec1 genome name,spec2:spec2 genome name'
         self.hocv_depths='refspec_spec1:num,refspec_spec2:num'
-        self.infer_name = 'refspec_spec1,refspec_spec2'
+        self.infer_name = ''  # refspec_spec1,refspec_spec2
         self.intergenomicratio = 1 # orthologous synteny ratio (default: 1)
         self.block_num = 5
         self.hocv = -1 # (-1< hocv <1)
+        self.select_ref_ancestor_spec = ''  # sepc name
 
         self.common_wgd = False
         self.infer_wgd_flag = True
-        self.Conserved_spec = sepc
+        self.conserved_spec = ''  # sepc name
+        self.save_path = '.'
         
         self.color_pos = 0
         for k, v in options:
@@ -34,14 +35,17 @@ class ConservedAncestralRegions:
             else:
                 setattr(self, str(k), v)
 
-
         self.wgds = {y[0]:y[1] for y in [x.split(':') for x in self.wgds.split(',')]}
         self.hocv_depths = {y[0]:int(y[1]) for y in [x.split(':') for x in self.hocv_depths.split(',')]}
         self.latin_name = {y[0]:y[1] for y in [x.split(':') for x in self.latin_name.split(',')]}
         self.bk_files = {y[0]:y[1] for y in [x.split(':') for x in self.bk_files.split(',')]}
         self.len_files = {y[0]:y[1] for y in [x.split(':') for x in self.len_files.split(',')]}
         self.recentwgdchr = {y[0]:y[1] for y in [x.split(':') for x in self.recentwgdchr.split(',')]}
-        self.infer_name = self.infer_name.split(',')
+        self.infer_name = self.infer_name.strip().split(',')
+
+        if self.infer_wgd_flag.upper() == 'TRUE' and not self.infer_name[0]:
+            raise AssertionError("infer_name and infer_wgd_flag must be consistent")
+
         self.colors = {'1':'#a6c952', '2':'#2f7ec2','3':'#009c75', "4": '#00b5ef',
                         "5": '#eb2690', "6": '#ffd00a', "7": '#eb2d2d', "8": "#fc8d62", 
                         "9": "orange", "10": "#CCCC99", "11": "#CC99FF", "12": "c",
@@ -85,8 +89,29 @@ class ConservedAncestralRegions:
             CSR_top_each_len[key] = midd_top_each_len
         return CSR_top_all_lens, CSR_top_each_len
 
-    def product_ancestral_chromosome(self, species, define_color, CSR_lens, alpla):
-        # 统计祖先染色体的颜色和长度大小
+    def product_ancestral_chromosome(self, CSR_color_lens, color_order):
+        new_color_order = sorted(color_order.items(), key=lambda x: x[1])
+        order_color = [x[0] for x in new_color_order]
+
+        sort_CSR_color_lens = sorted(CSR_color_lens, key=lambda x: x[3])
+        temp_CSR_color_lens = groupby(sort_CSR_color_lens, lambda x: x[3])
+        all_color_lens = {}
+        for color, group in temp_CSR_color_lens:
+            color_list = list(group)
+            total_len = 0
+            for lis in color_list:
+                total_len += abs(lis[2]-lis[1]+1)
+            all_color_lens[color] = total_len
+
+        ancestral_chromosome_conf = []
+        ancestral_color_lens, ancestral_order = {}, 1
+        for color in order_color:
+            ancestral_chromosome_conf.append([ancestral_order, 1, all_color_lens[color], color])
+            ancestral_order += 1
+
+        return ancestral_chromosome_conf
+
+    def product_ancestral_chromosome1(self, species, define_color, CSR_lens, alpla):
         specs = species.split('_')
         key = specs[0]+'_'+specs[1]
         spec_CSR_lens = CSR_lens[key]
@@ -98,14 +123,12 @@ class ConservedAncestralRegions:
             ancestrals = list(group)
             for anc in ancestrals:
                 ancestral_color_lens[ancestral_order] = ancestral_color_lens.get(ancestral_order, 0)+spec_CSR_lens[anc[0]]
-            ancestral_color_lens[ancestral_order] = [1, ancestral_color_lens[ancestral_order], color, alpla]
+            ancestral_color_lens[ancestral_order] = [1, ancestral_color_lens[ancestral_order], color]
             ancestral_order += 1
-        # max_lens = max([x[1] for x in ancestral_color_lens.values()]) 
         for c in ancestral_color_lens:
             new_row = [c]+ancestral_color_lens[c]
             ancestral_chromosome_conf.append(new_row)
 
-        # print(ancestral_chromosome_conf)
         return ancestral_chromosome_conf
 
     def product_wgd_chromosome(self, species, target_spec, define_color, CSR_each_lens, wgds_chromosome, wgds, alpla):
@@ -128,36 +151,31 @@ class ConservedAncestralRegions:
             for c in midd_chr_color.keys():
                 order = 1
                 md_rows = midd_chr_color[c]
-                # chr_lens = sum([num[0] for num in md_rows])
                 break_poins = '_'.join([str(num[0]) for num in md_rows])
                 for row in md_rows:
-                    conf_line = [c, order, order+row[0], row[1], alpla]
+                    conf_line = [c, order, order+row[0], row[1]]
                     midd_chromosome_conf.append(conf_line)
                     order += row[0]
-
 
             wgds_chrs_color.append(midd_chromosome_conf)
 
 
         return wgds_names, wgds_chrs_color
-        # print(spec_each_lens)
 
     def map_spec_modeule(self, spec_names, mdinfos):
-
         modules_colorinfo, modules_infos = {}, {}
         specs = spec_names.split('_')
         ref_spec = specs[0]
+
         for spec in specs[1:]:
             key = ref_spec+'_'+spec
             md_info = mdinfos[key]
             md_color_pos, new_md_info = [], []
-            # sf = open(f'{key}.top.color.pos.txt', 'w')
             for lis in md_info:
                 module_chr_ratio = 0
                 color = self.colors[str(lis[0])]
                 md_ty = 'CSR'+lis[11]
                 top_row = lis[:2]+lis[4:6]+[color, md_ty, lis[12]]
-                # sf.write('\t'.join([str(x) for x in top_row])+'\n')
                 new_row = lis[:6]+[color, md_ty, lis[12]]
                 md_color_pos.append(new_row)
 
@@ -168,76 +186,91 @@ class ConservedAncestralRegions:
 
         return modules_infos, modules_colorinfo
 
-    def estimation_confidence(self, species, intergenomicratio, chr_types, color_pos):  # estimation Confidence
+    def infer_ancestral_karyotype(self, species, intergenomicratio, chr_types, color_pos):
+        sf_car_chromosome = open(f'{self.save_path}/A-{self.species}-ancestral_chromosome_CAR.txt', 'w')
+
         specs = species.split('_')
-        repeat_results, CSR_link = [], []
-        for i in range(1, 1001):
-            print('Inferring ancestral karyotype %sst time'%(i))
-            color_module, ancestral_chr = self.get_adjacent_between_module(species, intergenomicratio, copy.deepcopy(chr_types), color_pos)
-            ancestral_chr = [[str(x[0]), x[1][0], x[2]] for x in ancestral_chr]
-            repeat_results.append([color_module, ancestral_chr])
-            CSR_link.append(ancestral_chr)
+        define_color_module, ancestral_chr = self.get_adjacent_between_module(species, intergenomicratio, copy.deepcopy(chr_types), color_pos)
+        ancestral_chr = [[str(x[0]), x[1][0], x[2]] for x in ancestral_chr]
+        
+        # ancestral_chr
+        all_CSR, new_ancestral_chr = [], []
+        ancestral_chr = sorted(ancestral_chr, key=lambda x: len(x[2].split('_')), reverse=True)
+        for lis in ancestral_chr:
+            csrs = lis[2].split('_')
+            if len(list(set(csrs) & set(all_CSR))) == 0:
+                new_ancestral_chr.append(lis)
+            all_CSR.extend(csrs)
+
+        new_ancestral_chr = sorted(new_ancestral_chr, key=lambda x: int(x[0]))
+        # group_ratio = groupby(new_ratio, lambda x:int(x[0]))
 
 
-        # 统计每种连接方式出现的次数
-        t = lambda x: tuple(map(str.strip, x))
-        c = Counter(map(t, chain.from_iterable(CSR_link)))
-
-        ancs = []
-        flag, ancnum = repeat_results[0], 1
-
-        for anc in repeat_results[1:]:
-            if flag[0] == anc[0] and flag[1] == anc[1]:
-                ancnum += 1
-            else:
-                ancs.append([ancnum, flag[0], flag[1]])
-                flag = anc
-                ancnum = 1
-        ancs.append([ancnum, flag[0], flag[1]])
-
-        new_ancs = sorted(ancs, key=lambda x: int(x[0]), reverse=True)
-
+        print(f'chromosome\t{specs[1]}_chr\t{specs[2]}_chr\t\033[1;32mCAR\033[0m')
+        sf_car_chromosome.write(f'chromosome\t{specs[1]}_chr\t{specs[2]}_chr\tCAR\n')
         print()
-        print()
-        print()
-        print('Get the most likely ancestral karyotype......')
-        best_anc = new_ancs[0]
-
-        define_color_module = best_anc[1]
-        total_cof = best_anc[0]/1000*100
-        print(f'Ancestral karyotype confidence \033[1;31m{total_cof}%\033[0m')
-
-        print()
-        print(f'chromosome order\t{specs[1]}_chr\t{specs[2]}_chr\tConnection pattern\tConfidence')
         chrnum = 1
-        for lis in best_anc[2]:
-            times = c[tuple(lis)]
-            cof = float(times)/1000*100
-            print(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t{lis[2]}\t{cof}%')
+        color_order = {}
+        for lis in new_ancestral_chr:
+            CSR = lis[2].split('_')[0]
+            color = define_color_module[CSR]
+            color_order[color] = chrnum
+            print(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t\033[1;32m{lis[2]}\033[0m')
+            sf_car_chromosome.write(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t{lis[2]}\n')
             chrnum += 1
 
-        return define_color_module
+        sf_car_chromosome.close()
 
-    @staticmethod
-    def p_random(arr1, arr2):
-        assert len(arr1) == len(arr2), "Length does not match."
-        assert sum(arr2) == 1 , "Total rate is not 1."
+        return define_color_module, color_order
 
-        sup_list = [len(str(i).split(".")[-1]) for i in arr2]
-        top = 10 ** max(sup_list)
-        new_rate = [int(i*top) for i in arr2]
-        
-        rate_arr = []
-        for i in range(1,len(new_rate)+1):
-            rate_arr.append(sum(new_rate[:i]))
-        rand = random.randint(1,top)
-        
-        data = None
-        for i in range(len(rate_arr)):
-            if rand <= rate_arr[i]:
-                data = arr1[i]
-                break
-        return data
+    def infer_ancestral_karyotype_common(self, species, conserved_spec, wgds, chr_types, recent_wgdchr, flag=False):
+        sf_car_chromosome = open(f'{self.save_path}/A-{self.species}-ancestral_chromosome_CAR.txt', 'w')
+        specs = species.split('_')
+        all_wgds_chromosome = self.get_adjacent_within_module(species, conserved_spec, wgds, copy.deepcopy(chr_types), recent_wgdchr, flag)
+        ancestral_chr = all_wgds_chromosome[-1]
+
+        print(f'chromosome\t{conserved_spec}_chr\t{conserved_spec}_chr\t\033[1;32mCAR\033[0m')
+        sf_car_chromosome.write(f'chromosome\t{specs[1]}_chr\t{specs[1]}_chr\tCAR\n')
+        print()
+        chrnum = 1
+        CSR_order = {}
+        for lis in ancestral_chr:
+            CSR = lis[4][0]
+            CSR_order[CSR] = chrnum
+            link_model = '_'.join(lis[4])
+            print(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t\033[1;32m{link_model}\033[0m')
+            sf_car_chromosome.write(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t{link_model}\n')
+            chrnum += 1
+
+        sf_car_chromosome.close()
+
+        return all_wgds_chromosome, CSR_order
+
+    def print_ancestral_before_after(self, species, wgd_num, all_wgds_chromosome):
+        sf_car_chromosome = open(f'{self.save_path}/A-{species}-chromosome_CAR.WGD-before.txt', 'w')
+        specs = species.split('_')
+        wgds = wgd_num[specs[1]].split('_')
+
+        print('\n')
+        print(f'chromosome\t{specs[1]}_chr\t{specs[1]}_chr\t\033[1;32mCAR\033[0m')
+        sf_car_chromosome.write(f'chromosome\t{specs[1]}_chr\t{specs[1]}_chr\tCAR\n')
+        print()
+        # CSR_order = {}
+        for ancestral_chr in all_wgds_chromosome:
+            name = wgds.pop()
+            sf_car_chromosome.write('\n')
+            print(f'WGD {name} Before duplication: {len(ancestral_chr)} chromosome')
+            sf_car_chromosome.write(f'WGD {name} Before duplication: {len(ancestral_chr)} chromosome\n')
+            chrnum = 1
+            for lis in ancestral_chr:
+                link_model = '_'.join(lis[4])
+                print(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t\033[1;32m{link_model}\033[0m')
+                sf_car_chromosome.write(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t{link_model}\n')
+                chrnum += 1
+
+        sf_car_chromosome.close()
+
+        return all_wgds_chromosome
 
     def get_adjacent_between_module(self, species, sub_num, chr_all_types, color_pos):
         
@@ -246,10 +279,9 @@ class ConservedAncestralRegions:
         specs = species.split('_')
         ref_spec = specs[0]
         init_key = ref_spec+'_'+specs[1]
-        init_types = chr_all_types[init_key] 
+        init_types = chr_all_types[init_key]
 
         iteration_num, ancestral_chr = 0, []
-        # Complete ancestral chromosome
         while iteration_num < 10:  # 10000
             midd = {int(i):[] for i in init_types.keys()}
             ke = ref_spec+'_'+specs[2]
@@ -296,17 +328,14 @@ class ConservedAncestralRegions:
                         b.append(v)
                     sum_b = sum(b)
                     b = [x/sum_b for x in b]
-                    select_CSR = self.p_random(a, b)
 
-                    # max_ty = Counter(CSRs).most_common(1)[0]
+                    max_ty = Counter(CSRs).most_common(1)[0]
                 else:
                     continue
-                if select_CSR:
-                
-
-                    ancestral_chr.append([chr_key, link_dit[select_CSR], select_CSR])
-
-                    tyss = select_CSR.split('_')
+                if max_ty[1] >= sub_num/2:
+                    midd_max_ty = max_ty[0]
+                    ancestral_chr.append([chr_key, link_dit[midd_max_ty], midd_max_ty])
+                    tyss = midd_max_ty.split('_')
                     color, flag = colors[color_pos], 1
                     if any(([(t in define_type_module) for t in tyss])):
                         ke = list(set(tyss) & set(define_type_module.keys()))[0]
@@ -335,26 +364,6 @@ class ConservedAncestralRegions:
 
         return define_type_module, ancestral_chr
 
-    def sort_method(self, args):
-        a = sorted([args[2], args[3]])
-        b = sorted([args[4], args[5]])
-        return a+b
-
-    def compair_type_distance(self, a, b):
-        if a == 0 or b == 0:
-            min_dis = 99999
-        else:
-            distance = []
-            Balanced = [0.5, 0.5]
-            
-            x = np.array(Balanced)
-            y = np.array([a, b])
-            d = np.sqrt( np.sum ( np.square ( x - y ) ) )
-            distance.append(d)
-            min_dis = min(distance)
-
-        return min_dis
-
     def get_adjacent_within_module(self, sepcies, target_spec, wgd_num, chr_all_types, define_recent_wgd_file, flagpr=True):
         define_recent_chr = {}
         for li in open(define_recent_wgd_file):
@@ -366,7 +375,7 @@ class ConservedAncestralRegions:
 
 
         all_wgds_chromosome = []
-        sub_num = {'2': 1, '3': 2, '5': 4, '4':3, '8':7}  #发生一次乘几的多倍化
+        sub_num = {'2': 1, '3': 2, '5': 4, '4':3, '8':7}
         wgds = wgd_num[target_spec].split('_')
         specs = sepcies.split('_')
         ref_spec = specs[0]
@@ -391,14 +400,7 @@ class ConservedAncestralRegions:
                     continue
                 wgd_recent_order.append([k, v, ref_comm_ratio, com_comm_ratio, comm_ty])
         all_wgds_chromosome.append(wgd_recent_order)
-        print(f'chromosome order\tref_chr\tcom_chr\tConnection pattern')
-        chrnum = 1
-        for lis in wgd_recent_order:
-            link_model = '_'.join(lis[4])
-            print(f'chromosome:{chrnum}\t{lis[0]}\t{lis[1]}\t{link_model}')
-            chrnum += 1
-        if flagpr:
-            print(f'WGD {na} Before duplication: {len(wgd_recent_order)} chromosome')
+
         deal_chr = sorted(list(set([x[0] for x in wgd_recent_order])), key=lambda x: int(x))
 
         for dc in deal_chr:
@@ -410,21 +412,16 @@ class ConservedAncestralRegions:
             wgd = wgds.pop(-1)
             wgd_chr, wgd_color_order = [], []
             num = 0
-            print('-------------------------------------------------')
-            print('start')
             midd_com_types = copy.deepcopy(com_types)
             while num <10:
                 combin_chrs = list(product(midd_com_types.keys(), repeat=2))
                 ratio = []
                 for chr_combin in combin_chrs:
                     ref_chr, com_chr = chr_combin
-                    # # 自己和自己的不确定
                     if ref_chr == com_chr:
                         continue
                     ref = midd_com_types[ref_chr]
                     com = midd_com_types[com_chr]
-                    # if (not ref) or (not com):
-                        # continue
                     ref_mds = set([x[3] for x in ref])
                     com_mds = set([x[3] for x in com])
                     comm_ty = list(ref_mds & com_mds)
@@ -446,13 +443,7 @@ class ConservedAncestralRegions:
                     new_group = [x for x in new_group if x[2] > 0 and x[3] > 0]
                     # print(new_group)
                     pair_chr = new_group[:sub_num[wgd]]
-                    # result_gr = [x for x in pair_chr if x[2] > 0 and x[3] > 0]
-                    # print([x[4] for x in pair_chr if x[2] > 0 and x[3] > 0])
-                    # print(result_gr)
-
                     midd[name] = pair_chr
-                # print('-------------------------------')
-
 
                 midd_wgd_color_order = []
                 for chr_key in midd:
@@ -480,7 +471,6 @@ class ConservedAncestralRegions:
 
                 sort_midd_wgd_color_order = sorted(new_midd_wgd_color_order, key=lambda x: (len(x[4]), float(x[2]), float(x[3])), reverse=True)
 
-
                 new_midd_wgd_color_order = []
                 for lk in sort_midd_wgd_color_order:
                     if lk[0] not in midd_com_types or lk[1] not in midd_com_types:
@@ -495,7 +485,6 @@ class ConservedAncestralRegions:
                         del_chr = []
                         for k in lk[:2]:
                             remove_tt, new_tt = [], []
-                            
                             old_lks = midd_com_types[k]
                             old_lk = [x[3] for x in old_lks]
                             for t in lk[4]:
@@ -559,32 +548,19 @@ class ConservedAncestralRegions:
 
             all_wgds_chromosome.append(result_wgd_color_order)
 
-            chrnum1 = 1
-            for lis in result_wgd_color_order:
-                link_model = '_'.join(lis[4])
-                print(f'chromosome:{chrnum1}\t{lis[0]}\t{lis[1]}\t{link_model}')
-                chrnum1 += 1
-            if flagpr:
-                print(f'WGD {wgd} Before duplication: {len(wgd_color_order)} chromosome')
-
-            print('-------------------------------------------------')
             deal_chr = [x[0] for x in result_wgd_color_order]
             for dc in deal_chr:
-            # for dc in ['2', '10', '19', '5', '26', '3']:
                 if dc in com_types:
                     com_types.pop(dc)
-
-
         return all_wgds_chromosome
 
     def define_ancestral_color(self, all_wgds_chromosome, color_pos, chr_spec_types):
+
         define_ty_color, colors = {}, list(self.colors.values())
         ancestral = all_wgds_chromosome.pop()
         for chromosome in ancestral:
             color = colors[color_pos]
             for csr in chromosome[4]:
-                # key = f'{csr}_{chromosome[0]}_{chromosome[1]}'
-                # define_ty_color[key] = color
                 define_ty_color[csr] = color
             color_pos += 1
 
@@ -604,11 +580,10 @@ class ConservedAncestralRegions:
 
         return define_ty_color
 
-    def infer_ancestral_karyotype(self, modules_infos, lens_dit):
-
+    def count_csr_onchromosome(self, modules_infos, lens_dit):
         no_exist_CSR = []
         all_key = list(modules_infos.keys())
-        if len(all_key) > 1:  
+        if len(all_key) > 1:
             ll_CSR = [x[14] for x in modules_infos[all_key[0]]]
             yy_CSR = [x[14] for x in modules_infos[all_key[1]]]
             no_exist_CSR.extend(list(set(ll_CSR)-set(yy_CSR)))
@@ -683,6 +658,7 @@ class ConservedAncestralRegions:
         return block_info
 
     def get_new_color_list(self, color_list, len_dit):
+
         new_color_list = []
 
         lk_color = ['_'.join([str(x) for x in lis]) for lis in color_list]
@@ -698,7 +674,7 @@ class ConservedAncestralRegions:
         for name, group in temp_list:
 
             group_list = list(group)
-            group_order_list = sorted(group_list, key=lambda x: int(x[1]))
+            group_order_list = sorted(group_list, key=lambda x: (int(x[1]), x[3]))
 
             chr_len = len_dit[int(name)]
             color_old, start_old, end_old = '', 0, 0
@@ -785,8 +761,8 @@ class ConservedAncestralRegions:
             define_ty_color[lis[0]] = lis[1]
         return define_ty_color
 
-    def main(self):
-        ref_spec = self.species.split('_')[0]
+    def run(self):
+        specs = self.species.split('_')
         mdinfos, block_list_dit = {}, {}
         for key, bkfile in self.bk_files.items():
             block_list = self.read_blockinfo(bkfile, self.block_num, self.hocv, self.hocv_depths[key])
@@ -799,10 +775,8 @@ class ConservedAncestralRegions:
         # Add CSR names to each module
         new_mdinfos, modules_colorinfo = self.map_spec_modeule(self.species, mdinfos)
 
-
         # Counting CSRs on each chromosome
-        chr_all_types = self.infer_ancestral_karyotype(new_mdinfos, spec_lens_dit)
-
+        chr_all_types = self.count_csr_onchromosome(new_mdinfos, spec_lens_dit)
 
         # The total length of identical CSRs in all chromosomes of each species was counted.
         # For inferring the proportion of ancestral chromosomes
@@ -811,28 +785,62 @@ class ConservedAncestralRegions:
         # used to infer the proportion of chromosomes before and after WGD
         CSR_top_all_lens, CSR_top_each_len = self.count_CSR_lens(new_mdinfos)
 
-
         # commond polyploidization to infer ancestral karyotypes
+        print()
+        print()
+        # print(f'Get the most likely ancestral karyotype \033[1;31m......\033[0m')
+        print(f'Get the most likely ancestral karyotype......')
+        print()
+        print()
         if self.common_wgd.upper() == 'TRUE':
-            kkey = f'{ref_spec}_{self.Conserved_spec}'
-            all_wgds_chromosome = self.get_adjacent_within_module(self.species, self.Conserved_spec, self.wgds, copy.deepcopy(chr_all_types), self.recentwgdchr[self.Conserved_spec], False)  # '2_3' 一次2倍一次三倍
+            kkey = f'{specs[0]}_{self.conserved_spec}'
+            all_wgds_chromosome, CSR_order = self.infer_ancestral_karyotype_common(self.species, self.conserved_spec, self.wgds, copy.deepcopy(chr_all_types), self.recentwgdchr[self.conserved_spec])
+            # all_wgds_chromosome = self.get_adjacent_within_module(self.species, self.conserved_spec, self.wgds, copy.deepcopy(chr_all_types), self.recentwgdchr[self.conserved_spec], False)  # '2_3' 一次2倍一次三倍
             define_color_module = self.define_ancestral_color(all_wgds_chromosome, self.color_pos, chr_all_types[kkey])
+            color_order = {define_color_module[c]:CSR_order[c] for c in CSR_order}
         # Inferring ancestral karyotype
         else:
-            define_color_module = self.estimation_confidence(self.species, self.intergenomicratio, copy.deepcopy(chr_all_types), self.color_pos)
+            define_color_module, color_order = self.infer_ancestral_karyotype(self.species, self.intergenomicratio, copy.deepcopy(chr_all_types), self.color_pos)
             # define_color_module, ancestral_chr = self.get_adjacent_between_module(self.species, self.intergenomicratio, copy.deepcopy(chr_all_types), self.color_pos)
 
-        ancestral_chromosome_conf = self.product_ancestral_chromosome(self.species, define_color_module, CSR_top_all_lens, 1)
 
+        expansion_color, spec_color = {}, {}
+        if len(specs) == 3:
+            names = [f'{specs[0]}_{specs[1]}', f'{specs[0]}_{specs[2]}']
+        else:
+            names = [f'{specs[0]}_{specs[1]}']
+
+        for name in names:
+            spec1, spec2 = name.split('_')
+            top_color, left_color = self.get_module_block_color(block_list_dit[name], define_color_module, spec_lens_dit, name)
+            expansion_color[name] = [top_color, left_color]
+            spec_color[spec2] = top_color
+            if spec1 in spec_color:
+                if len(left_color) < len(spec_color[spec1]):
+                    spec_color[spec1] = left_color
+            else:
+                spec_color[spec1] = left_color
+
+        # ancestral_chromosome_conf = self.product_ancestral_chromosome(self.species, define_color_module, CSR_top_all_lens, 1)
+        ancestral_chromosome_conf = self.product_ancestral_chromosome(spec_color[self.select_ref_ancestor_spec], color_order)
+        
+        import pickle
+        with open(f'{self.save_path}/ancestor_color_order', 'wb') as save:
+            pickle.dump(color_order, save)
+
+
+        sf_ags = open(f'{self.save_path}/A.AKRUP-ags-select_{self.select_ref_ancestor_spec}.pep.Construct_ancestral_genomes.conf.txt', 'w')
+        new_ags_color = ['\t'.join([str(v) for v in x]) for x in spec_color[self.select_ref_ancestor_spec]]
+        sf_ags.write('\n'.join(new_ags_color))
 
         # save ancestral file
-        sf_anc_chromosome = open(f'A-{self.species}-ancestral_chromosome_conf.txt', 'w')
+        sf_anc_chromosome = open(f'{self.save_path}/A-select_{self.select_ref_ancestor_spec}-ancestral_chromosome_conf.txt', 'w')
         ancestral_chromosome_conf = sorted(ancestral_chromosome_conf, key=lambda x: int(x[0]))
         new_anc_color = ['\t'.join([str(v) for v in x]) for x in ancestral_chromosome_conf]
         sf_anc_chromosome.write('\n'.join(new_anc_color))
 
         # Save the ancestral color of the CSR
-        sf_anc_CSR_color = open(f'A-{self.species}-ancestral_CSR-color_conf.txt', 'w')
+        sf_anc_CSR_color = open(f'{self.save_path}/A-{self.species}-ancestral_CSR-color_conf.txt', 'w')
         for CSR, cor in define_color_module.items():
             sf_anc_CSR_color.write(f'{CSR}\t{cor}\n')
 
@@ -844,31 +852,52 @@ class ConservedAncestralRegions:
         th = threading.Thread(target=await_run, args=(content,event))
         th.start()
 
-        for name in self.infer_name:
-            spec1, spec2 = name.split('_')
+        try:
+            # for name in self.infer_name:
+            # for name in [f'{specs[0]}_{specs[1]}', f'{specs[0]}_{specs[2]}']:
+            for name in names:
+                spec1, spec2 = name.split('_')
 
-            # Karyotype color block for expansion
-            top_color, left_color = self.get_module_block_color(block_list_dit[name], define_color_module, spec_lens_dit, name)
-            
-            # save Karyotype color
-            sf_top = open(f'A.{name}.top.color.pos.txt', 'w')
-            sf_left = open(f'A.{name}.left.color.pos.txt', 'w')
-            new_top_color = ['\t'.join([str(v) for v in x]) for x in top_color]
-            new_left_color = ['\t'.join([str(v) for v in x]) for x in left_color]
-            sf_top.write('\n'.join(new_top_color))
-            sf_left.write('\n'.join(new_left_color))
+                # Karyotype color block for expansion
+                top_color, left_color = expansion_color[name]
+                # top_color, left_color = self.get_module_block_color(block_list_dit[name], define_color_module, spec_lens_dit, name)
+                
+                # save Karyotype color
+                sf_top = open(f'{self.save_path}/A.{name}.top.color.pos.txt', 'w')
+                sf_left = open(f'{self.save_path}/A.{name}.left.color.pos.txt', 'w')
+                new_top_color = ['\t'.join([str(v) for v in x]) for x in top_color]
+                new_left_color = ['\t'.join([str(v) for v in x]) for x in left_color]
+                sf_top.write('\n'.join(new_top_color))
+                sf_left.write('\n'.join(new_left_color))
 
-            if self.infer_wgd_flag.upper() == 'TRUE':
-                # Inferring karyotypes before and after polyploidization
-                target_spec = spec2
-                all_wgds_chromosome = self.get_adjacent_within_module(self.species, target_spec, self.wgds, copy.deepcopy(chr_all_types), self.recentwgdchr[target_spec])  # '2_3' 一次2倍一次三倍
-                wgds_names, wgds_chr_colors = self.product_wgd_chromosome(self.species, target_spec, define_color_module, CSR_top_each_len, all_wgds_chromosome, self.wgds, 1)
+                if self.infer_wgd_flag.upper() == 'TRUE' and name in self.infer_name:
+                    # Inferring karyotypes before and after polyploidization
+                    target_spec = spec2
+                    all_wgds_chromosome = self.get_adjacent_within_module(self.species, target_spec, self.wgds, copy.deepcopy(chr_all_types), self.recentwgdchr[target_spec])  # '2_3' 一次2倍一次三倍
+                    
+                    self.print_ancestral_before_after(name, self.wgds, all_wgds_chromosome)
+                    wgds_names, wgds_chr_colors = self.product_wgd_chromosome(self.species, target_spec, define_color_module, CSR_top_each_len, all_wgds_chromosome, self.wgds, 1)
 
-                # Karyotype mapping
-                p = DotplotBlock(name, lens_list, block_list_dit[name], top_color, left_color, self.latin_name, define_color_module)
-                p.main(ancestral_chromosome_conf, wgds_chr_colors)
-            elif self.infer_wgd_flag.upper() == 'FALSE':
-                p = DotplotBlock(name, lens_list, block_list_dit[name], top_color, left_color, self.latin_name, define_color_module)
-                p.main(ancestral_chromosome_conf, [])
-        event.set()
+                    for wgdna, wgds_anc in zip(wgds_names, wgds_chr_colors):
+                        sf_color_chromosome = open(f'{self.save_path}/A-{spec2}-chromosome_ancestral_color_pos.{wgdna}-WGD-before.txt', 'w')
+                        for lis in wgds_anc:
+                            newlis = [str(x) for x in lis]
+                            sf_color_chromosome.write('\t'.join(newlis)+'\n')
+                        sf_color_chromosome.close()
 
+                    # Karyotype mapping
+                    p = DotplotBlock(name, lens_list, block_list_dit[name], top_color, left_color, self.latin_name, define_color_module, self.save_path)
+                    p.main(ancestral_chromosome_conf, wgds_chr_colors)
+                elif self.infer_wgd_flag.upper() == 'FALSE':
+                    p = DotplotBlock(name, lens_list, block_list_dit[name], top_color, left_color, self.latin_name, define_color_module, self.save_path)
+                    p.main(ancestral_chromosome_conf, [])
+            event.set()
+            import time
+            time.sleep(1)
+        except Exception as e:
+            print('\n')
+            print('\033[1;31mPlease check the input file and parameters!!!\033[0m')
+            event.set()
+        else:
+            print('\n')
+            print('\033[0;32mCompleted.........\033[0m')  

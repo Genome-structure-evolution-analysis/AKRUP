@@ -6,9 +6,12 @@ class ancestral_karyotype:
     def __init__(self, options):
         self.mark = 'seq name'
         self.gff = 'gff file'
+        self.ancestor_color_order = 'ancestor color order file'
         self.ancestor_conf = 'ancestor conf'
-        self.pep_file = 'pep file'
+        self.pep_file = ''  # pep file
+        self.cds_file = ''  # cds file
         self.ancestor_pep =  'ancestor pep file'
+        self.ancestor_cds =  'ancestor cds file'
         self.ancestor_gff =  'ancestor gff file'
         self.ancestor_lenstxt = 'ancestor lenstxt'
         self.ancestor_lens =  'ancestor lens'
@@ -41,9 +44,14 @@ class ancestral_karyotype:
         ancestor = self.read_calassfication(self.ancestor_conf)
         gff = gff[gff['chr'].isin(ancestor[0].values.tolist())]
         newgff = gff.copy()
-        data,num = [],1
+        data,num = [], 1
         chr_arr = ancestor[3].drop_duplicates().to_list()
-        chr_dict = dict(zip(chr_arr, range(1, len(chr_arr)+1)))
+        import pickle
+        with open(self.ancestor_color_order, 'rb') as colorder:
+            color_order = pickle.load(colorder)
+
+        sort_chr_arr = sorted(chr_arr, key=lambda x: color_order[x])
+        chr_dict = dict(zip(sort_chr_arr, range(1, len(sort_chr_arr)+1)))
         ancestor['order'] = ancestor[3].map(chr_dict)
         dict1, dict2 = {}, {}
         for order, group in ancestor.groupby(['order'], sort=[False, False]):
@@ -54,7 +62,8 @@ class ancestral_karyotype:
                 for k in index1:
                     data.append(newgff.loc[k, :].values.tolist()+[k])
             # dict1[str(num)] = cla
-            dict2[str(num)] = group[3].values[0]
+            # dict2[str(num)] = group[3].values[0]
+            dict2[num] = group[3].values[0]
             num+=1
         df = pd.DataFrame(data)
         pep = SeqIO.to_dict(SeqIO.parse(self.pep_file, "fasta"))
@@ -64,7 +73,9 @@ class ancestral_karyotype:
             df.loc[group.index, 'newname'] = list(
                 [str(self.mark)+str(name)+'g'+str(i).zfill(5) for i in range(1, len(group)+1)])
         df['order'] = df['order'].astype('int')
+        # df[0] = df[0].astype('int')
         df = df[[0, 1, 2, 3, 6, 'newname', 'order']]
+        df[0] = df[0].astype('int')
         df = df.sort_values(by=[0, 'order'])
         df.to_csv(self.ancestor_gff, sep="\t", index=False, header=None)
         lens = df.groupby(0).max()[[2, 'order']]
@@ -77,11 +88,21 @@ class ancestral_karyotype:
         lens[[1, 'order', 'color']].to_csv(
             self.ancestor_file, sep="\t", header=None)
         id_dict = df.set_index(6).to_dict()['newname']
-        seqs = []
-        for seq_record in SeqIO.parse(self.pep_file, "fasta"):
-            if seq_record.id in id_dict:
-                seq_record.id = id_dict[seq_record.id]
-            else:
-                continue
-            seqs.append(seq_record)
-        SeqIO.write(seqs, self.ancestor_pep, "fasta")
+        if self.pep_file:
+            seqs = []
+            for seq_record in SeqIO.parse(self.pep_file, "fasta"):
+                if seq_record.id in id_dict:
+                    seq_record.id = id_dict[seq_record.id]
+                else:
+                    continue
+                seqs.append(seq_record)
+            SeqIO.write(seqs, self.ancestor_pep, "fasta")
+        if self.cds_file:
+            seqs1 = []
+            for seq_record in SeqIO.parse(self.cds_file, "fasta"):
+                if seq_record.id in id_dict:
+                    seq_record.id = id_dict[seq_record.id]
+                else:
+                    continue
+                seqs1.append(seq_record)
+            SeqIO.write(seqs1, self.ancestor_cds, "fasta")

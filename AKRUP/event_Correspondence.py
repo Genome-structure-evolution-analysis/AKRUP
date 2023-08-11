@@ -5,11 +5,11 @@ class PolyploidyEvent:
     def __init__(self, options):
         self.corr_file = '*.top.correspondence.txt'
         self.blockinfo = '*.EventRelate_block.information.csv'
-        self.sf_file = '*.Polyploidy-block.information.csv'
+        self.save_file = '*.Polyploidy-block.information.csv'
         
         for k, v in options:
             setattr(self, str(k), v)
-        self.sf_handle = open(self.sf_file, 'w')
+        self.sf_handle = open(self.save_file, 'w')
 
     @staticmethod
     def get_chr_num(gene):
@@ -54,4 +54,3 @@ class PolyploidyEvent:
                 lis = block_infos[i].split(',')
                 lis[0] = str(i)
                 self.sf_handle.write(','.join(lis)+'\n')
-

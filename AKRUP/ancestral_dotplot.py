@@ -2,9 +2,10 @@ from AKRUP.funcbase import *
 
 
 class DotplotBlock(DotplotBase):
-    def __init__(self, name, lens_dit_ilst, block_list, top_color_list, left_color_list, name_change, ancestral_color):
+    def __init__(self, name, lens_dit_ilst, block_list, top_color_list, left_color_list, name_change, ancestral_color, save_path):
         DotplotBase.__init__(self)
         self.name = name
+        self.save_path = save_path
         self.bk_info_list = block_list
         self.name_change = name_change
         self.lens_dit_ilst = lens_dit_ilst
@@ -75,24 +76,24 @@ class DotplotBlock(DotplotBase):
         root.set_xlim(0, 1)
         root.set_ylim(0, 1)
         root.set_axis_off()
-        plt.savefig(f'A-{spec1}_{spec2}.ancestral_dotplot.png')
-        plt.savefig(f'A-{spec1}_{spec2}.ancestral_dotplot.pdf')
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.ancestral_dotplot.png')
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.ancestral_dotplot.pdf')
 
     def plot_ancestral(self, ancestor_list, width, max_col, spec1, spec2):
         fig, ax = plt.subplots(figsize=(8, 8))
         self.plot_chromosome_fig(ax, width, max_col, ancestor_list, False)
         ax.set_xticks([])
         ax.set_yticks([])
-        plt.savefig(f'A-{spec1}_{spec2}.karyotype_chromosome.png', dpi=500)
-        plt.savefig(f'A-{spec1}_{spec2}.karyotype_chromosome.pdf', dpi=500)
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.karyotype_chromosome.png', dpi=500)
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.karyotype_chromosome.pdf', dpi=500)
 
     def plot_ancestral_before(self, ancestor_list, width, max_col, spec1, spec2, i):
         fig, ax = plt.subplots(figsize=(8, 8))
         self.plot_chromosome_fig(ax, width, max_col, ancestor_list, False)
         ax.set_xticks([])
         ax.set_yticks([])
-        plt.savefig(f'A-{spec1}_{spec2}.before-{i+1}-WGD-karyotype_chromosome.png', dpi=500)
-        plt.savefig(f'A-{spec1}_{spec2}.before-{i+1}-WGD-karyotype_chromosome.pdf', dpi=500)
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.before-{i+1}-WGD-karyotype_chromosome.png', dpi=500)
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.before-{i+1}-WGD-karyotype_chromosome.pdf', dpi=500)
 
     def main(self, ancestor_list, wgds_chr_colors):
         if platform_name == 'Linux':
@@ -136,5 +137,5 @@ class DotplotBlock(DotplotBase):
         ax_main.set_xlim(0.05, 0.95)
         ax_main.set_axis_off()
 
-        plt.savefig(f'A-{spec1}_{spec2}.ancestral.png')
-        plt.savefig(f'A-{spec1}_{spec2}.ancestral.pdf')
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.ancestral.png')
+        plt.savefig(f'{self.save_path}/A-{spec1}_{spec2}.ancestral.pdf')

@@ -64,7 +64,7 @@ class KsDistrubute:
             color = c()
             ordername = c()
             len <- length(row.names(data))
-            xl = seq(${area}, by = .01)
+            xl = seq(${area}, by = .001)
             num = 0
             for (i in 1:len){
                 row_len = length(data[i,])
@@ -84,7 +84,7 @@ class KsDistrubute:
             lab = unique(data$type)
             data$species <-factor(data$species, levels = ordername)
             fig1 <- ggplot(data, aes(x = x, y = species, fill=type)) +
-            geom_density_ridges(mapping = aes(height=y),inherit.aes=TRUE,stat = 'identity', scale = 2, rel_min_height = 0.01, alpha=0.6, color = 'NA')+
+            geom_density_ridges(mapping = aes(height=y),inherit.aes=TRUE,stat = 'identity', scale = as.integer(${scale}), rel_min_height = 0.01, alpha=as.integer(${alpha}), color = 'NA')+
             theme_ridges(grid = FALSE)+
             scale_x_continuous(expand = c(0.01,0))+ # 扩展下横轴和纵轴
             scale_y_discrete(expand = c(0.01,0)) +
@@ -97,4 +97,3 @@ class KsDistrubute:
 
         rtemplate = RTemplate(dotks_template, args)
         rtemplate.run()
-

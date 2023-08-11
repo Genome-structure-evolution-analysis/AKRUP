@@ -42,8 +42,13 @@ class KidFit:
         print("\nR-square: "+str(r_value**2))
         print("The gaussian fitting curve parameters are :")
         for i in range(0, len(popt), 3):
+            popt[i+2] = popt[i+2]/sqrt(2)
+            popt[i] = popt[i]*sqrt(2*pi)*popt[i+2]
+            popt[i+2] = round(popt[i+2], 4)
+            popt[i] = round(popt[i], 4)
+            popt[i+1] = round(popt[i+1], 4)
             print('\t'.join([str(popt[i]), str(popt[i+1]), str(popt[i+2])]))
-        self.sf_ks_handle.write(','.join([name, str(popt[i]), str(popt[i+1]), str(popt[i+2])]))
+            self.sf_ks_handle.write(','.join([name, str(popt[i]), str(popt[i+1]), str(popt[i+2])]))
 
         return popt
 
@@ -113,21 +118,22 @@ class EventBlock:
         for rows in block_infos:
             save_handle.write(','.join(rows) + '\n')
 
-    def main(self):
+    def run(self):
         block_list = [x.strip().split(',') for x in open(self.block_info)]
         peaks_blocks = self.classific_event_bestpart(block_list, self.pk_block_num, self.pk_hocv, self.hocv_depth)
         all_ks_list = [float(x[9]) for x in peaks_blocks if float(x[9]) > 0]
         ks_p = KidFit(self.name, all_ks_list)
         peaks = ks_p.main()
 
+        new_blockinfos = self.select_blockinfo(block_list, self.block_num, self.hocv, self.hocv_depth, peaks[2], self.range_k)
+        self.save_file_handle = open(self.save_file, 'w')
+        self.write_blockinfo(self.save_file_handle, new_blockinfos)
+
         left_name, top_name = self.name.split('_')
         savefile = f'{self.name}.Ks-event.middle.dotplot.png'
-        conf = dict(block_info=self.block_info, hocv_depth=self.hocv_depth, hocv=self.hocv, peaks=','.join([str(x) for x in peaks[1:]]), 
-            range_k=self.range_k, left_name=left_name, top_name=top_name, pkcolor=self.pkcolor, lens1=self.lens_file1, 
-            lens2=self.lens_file2, block_num=self.block_num, savefile=savefile, dpi=self.dpi)
-        p = DotplotCsrKs(conf.items(), 'Ksdotplot')
-        p.plotfig()
+        conf = dict(block_info=self.save_file, hocv_depth=self.hocv_depth, hocv=self.hocv, peaks=','.join([str(x) for x in peaks[1:]]), 
+            range_k=self.range_k, genome1_name=left_name, genome2_name=top_name, pkcolor=self.pkcolor, lens_file1=self.lens_file1, 
+            lens_file2=self.lens_file2, block_num=self.block_num, savefile=savefile, dpi=self.dpi)
+        p = DotplotCsrKs(conf.items(), 'eventdotplot')
+        p.run()
 
-        new_blockinfos = self.select_blockinfo(block_list, self.block_num, self.hocv, self.hocv_depth, peaks[2], self.range_k)
-        self.save_file = open(self.save_file, 'w')
-        self.write_blockinfo(self.save_file, new_blockinfos)

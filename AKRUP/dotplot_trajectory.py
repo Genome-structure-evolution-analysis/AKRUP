@@ -8,7 +8,7 @@ class DotPlotTrajectory(DotplotBase):
         self.blast_file = 'blast file'
         self.gff_file1 = 'gff1 file'
         self.gff_file2 = 'gff2 file'
-        self.wgd_name = 'WGD name'
+        self.process_name = 'WGD name/num fusion'
         self.score = 100
         self.evalue = 1e-5
         self.repnum = 20
@@ -47,7 +47,7 @@ class DotPlotTrajectory(DotplotBase):
         
         if top_ancestor_list1:
             ax4 = plt.axes([(1+1.5/7*l1)/12, 0.004, 1/12, 0.05])
-            self.plot_arrows(ax4, self.wgd_name)
+            self.plot_arrows(ax4, self.process_name)
         if top_ancestor_list2:
             ax5 = plt.axes([(1+1.5/7*l1+3/12*l2+1)/12, 0.004, 1/12, 0.05])
             self.plot_arrows(ax5, 'Redefining')
@@ -69,8 +69,8 @@ class DotPlotTrajectory(DotplotBase):
         align1 = dict(color='black', fontsize=18, rotation=90,style='italic')
         align2 = dict(color='black', fontsize=18, rotation=0,style='italic')
         chr_alian = dict(color='black', fontsize=14, rotation=0, style='normal')
-        self.plot_chr1(chr1_lens, gl1, gl2, step1, '', self.left_name, align1, chr_alian, 2240/2400, 1/12, 17/240)
-        self.plot_chr2(chr2_lens, gl1, gl2, step2, '', self.top_name, align2, chr_alian, 1/12, 224/240, 225/240)
+        self.plot_chr1(chr1_lens, gl1, gl2, step1, '', self.genome1_name, align1, chr_alian, 2240/2400, 1/12, 17/240)
+        self.plot_chr2(chr2_lens, gl1, gl2, step2, '', self.genome2_name, align2, chr_alian, 1/12, 224/240, 225/240)
 
         blast = self.getnewblast(self.blast_file, self.score, self.evalue, self.repnum, gene_loc_1, gene_loc_2)
         x, y, colors = self.pair_positon(blast, gene_loc_1, gene_loc_2, 224/240, 1/12)
@@ -93,4 +93,3 @@ class DotPlotTrajectory(DotplotBase):
         root.set_ylim(0, 1)
         root.set_axis_off()
         plt.savefig(self.savefile)
-

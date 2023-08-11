@@ -14,6 +14,7 @@ from AKRUP.ColinearScan import RunColinearScan
 from AKRUP.Blast import RunBlast
 from AKRUP.ks_fig import KsDistrubute
 from AKRUP.Ks import RunKs
+from AKRUP.ancestral_karyotype import KaryotypeFig
 
 
 from AKRUP.funcbase import load_conf
@@ -33,6 +34,7 @@ sections = {'runblast': 'blast',
            'event_correspondence': 'Polyploidy_CSR',
            'trajectorydotplot': 'karyotype',
            'inferranckaryotype': 'ancestral',
+           'anckaryotypefig': 'ancestralfig',
            'ancgenomeseqs': 'ancestralseq',
            }
 
@@ -50,6 +52,7 @@ optionfiles = {
             'ec': 'Polyploidy_CSR.conf',
             'td': 'dotplot_trajectory.conf',
             'iak': 'infer_anckaryotype.conf',
+            'akf': 'ancestral_plotfig.conf',
             'ags': 'ancestralseq.conf',
            }
 
@@ -68,6 +71,7 @@ def runmodule(argument):
         'event_correspondence': PolyploidyEvent,
         'trajectorydotplot': DotPlotTrajectory,
         'inferranckaryotype': ConservedAncestralRegions,
+        'anckaryotypefig': KaryotypeFig,
         'ancgenomeseqs': ancestral_karyotype,
     }
     return switch.get(argument)
@@ -87,10 +91,11 @@ def runmodule(argument):
 @click.option('-ec', '--event-correspondence', help='Extract event-related syntenic region',type=click.Path(exists=True))
 @click.option('-cd', '--csrdotplot', help='Show continuous syntenic regions dotplot',type=click.Path(exists=True))
 @click.option('-iak', '--inferranckaryotype', help='Inferring ancestral karyotypes',type=click.Path(exists=True))
+@click.option('-akf', '--anckaryotypefig', help='Draw karyotypes figure',type=click.Path(exists=True))
 @click.option('-ags', '--ancgenomeseqs', help='Extraction of ancestral genome sequence',type=click.Path(exists=True))
 @click.option('-td', '--trajectorydotplot', help='Show ancestor karyotype trajectory',type=click.Path(exists=True))
 @click.option('-e', '--example', help='Displays the configured parameters', 
-  type=click.Choice(['rb', 'rc', 'rk','d','bd', 'eb', 'ed', 'kf', 'lk', 'ec', 'cd', 'iak', 'ags', 'td']))
+  type=click.Choice(['rb', 'rc', 'rk','d','bd', 'eb', 'ed', 'kf', 'lk', 'ec', 'cd', 'iak', 'akf', 'ags', 'td']))
 def main(**args):
     '''
     AKRUP-ancestral karyotype reconstruction universal pipelines
@@ -104,7 +109,8 @@ def main(**args):
             if k == 'example' and v != None:
                 return click.echo(open(os.path.join(path, f'example/{optionfiles.get(v)}')).read()+'\n')
             elif v != None:
-                click.echo(open(v).read()+'\n')
+                with open(v, 'r', encoding='utf-8-sig') as hanf:
+                    click.echo(hanf.read()+'\n')
                 options = load_conf(v, sections.get(k))
 
                 if k in ['dotplot', 'blockdotplot', 'csrdotplot', 'eventdotplot']:
