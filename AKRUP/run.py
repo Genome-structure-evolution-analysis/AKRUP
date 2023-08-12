@@ -78,31 +78,31 @@ def runmodule(argument):
 
 @click.command()
 @click.help_option("-h", "--help", help='Show this help message and exit')
-@click.version_option(version='0.1',message='version %(version)s', package_name='AKRUP')
+@click.version_option(version='1.0.3',message='version %(version)s', package_name='AKRUP')
 @click.option('-rb', '--runblast', help='Search for potential homologous gene pairs',type=click.Path(exists=True))
-@click.option('-rc', '--runcolinearscan', help='Inferent of gene collinearity',type=click.Path(exists=True))
+@click.option('-rc', '--runcolinearscan', help='Infer genomic collinearity information',type=click.Path(exists=True))
 @click.option('-rk', '--runks', help='Calculate Ka/Ks for homologous gene pairs',type=click.Path(exists=True))
 @click.option('-d', '--dotplot', help='Show homologous gene dotplot',type=click.Path(exists=True))
 @click.option('-bd', '--blockdotplot', help='Show synteny block dotplot',type=click.Path(exists=True))
-@click.option('-eb', '--eventblock', help='Get event-related syntenic region',type=click.Path(exists=True))
+@click.option('-eb', '--eventblock', help='Obtain event-related syntenic region',type=click.Path(exists=True))
 @click.option('-ed', '--eventdotplot', help='Show event-related syntenic region dotplot',type=click.Path(exists=True))
-@click.option('-kf', '--ksfigure', help='Ks distribution map was drawn',type=click.Path(exists=True))
-@click.option('-lk', '--loadblock', help='Load collinear information',type=click.Path(exists=True))
+@click.option('-kf', '--ksfigure', help='Draw Ks distribution',type=click.Path(exists=True))
+@click.option('-lk', '--loadblock', help='Load collinearity information',type=click.Path(exists=True))
 @click.option('-ec', '--event-correspondence', help='Extract event-related syntenic region',type=click.Path(exists=True))
 @click.option('-cd', '--csrdotplot', help='Show continuous syntenic regions dotplot',type=click.Path(exists=True))
 @click.option('-iak', '--inferranckaryotype', help='Inferring ancestral karyotypes',type=click.Path(exists=True))
 @click.option('-akf', '--anckaryotypefig', help='Draw karyotypes figure',type=click.Path(exists=True))
 @click.option('-ags', '--ancgenomeseqs', help='Extraction of ancestral genome sequence',type=click.Path(exists=True))
-@click.option('-td', '--trajectorydotplot', help='Show ancestor karyotype trajectory',type=click.Path(exists=True))
+@click.option('-td', '--trajectorydotplot', help='Show ancestal karyotype trajectory',type=click.Path(exists=True))
 @click.option('-e', '--example', help='Displays the configured parameters', 
   type=click.Choice(['rb', 'rc', 'rk','d','bd', 'eb', 'ed', 'kf', 'lk', 'ec', 'cd', 'iak', 'akf', 'ags', 'td']))
 def main(**args):
     '''
-    AKRUP-ancestral karyotype reconstruction universal pipelines
+    AKRUP: Ancestral Karyotype Reconstruction Universal Pipeline
     
     \b
-    Include a "from the bottom up On "ancestral karyotype inference 
-    and a" top-down"inference of the evolutionary trajectory of ancient chromosomes
+    Include "bottom-up" inferences of ancestral karyotypes and
+    "top-down" inferences of ancient chromosome evolutionary trajectories
     '''
     try:
         for k, v in args.items():

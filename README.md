@@ -12,7 +12,7 @@ AKRUP: Ancestral Karyotype Reconstruction Universal Pipeline
 
 ## Description
 
-Include a "from the bottom up On "ancestral karyotype inference  and a" top-down"inference of the evolutionary trajectory of ancient chromosomes
+Include "bottom-up" inferences of ancestral karyotypes and "top-down" inferences of ancient chromosome evolutionary trajectories
 
 
 
