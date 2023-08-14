@@ -8,7 +8,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setup(
     name='AKRUP',
-    version='1.0.3',
+    version='1.0.4',
     author="wangjiaqi",
     description="Ancestral Karyotype Reconstruction Universal Pipeline",
     url="https://github.com/Genome-structure-evolution-analysis/AKRUP",

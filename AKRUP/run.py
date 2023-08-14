@@ -78,7 +78,7 @@ def runmodule(argument):
 
 @click.command()
 @click.help_option("-h", "--help", help='Show this help message and exit')
-@click.version_option(version='1.0.3',message='version %(version)s', package_name='AKRUP')
+@click.version_option(version='1.0.4',message='version %(version)s', package_name='AKRUP')
 @click.option('-rb', '--runblast', help='Search for potential homologous gene pairs',type=click.Path(exists=True))
 @click.option('-rc', '--runcolinearscan', help='Infer genomic collinearity information',type=click.Path(exists=True))
 @click.option('-rk', '--runks', help='Calculate Ka/Ks for homologous gene pairs',type=click.Path(exists=True))
