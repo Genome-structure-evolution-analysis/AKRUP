@@ -83,8 +83,8 @@ class KsDistrubute:
 
             lab = unique(data$type)
             data$species <-factor(data$species, levels = ordername)
-            fig1 <- ggplot(data, aes(x = x, y = species, fill=type)) +
-            geom_density_ridges(mapping = aes(height=y),inherit.aes=TRUE,stat = 'identity', scale = as.integer(${scale}), rel_min_height = 0.01, alpha=as.integer(${alpha}), color = 'NA')+
+            fig1 <- ggplot(data, aes(x = x, y = species, fill=forcats::fct_inorder(type))) +
+            geom_density_ridges(mapping = aes(height=y),inherit.aes=TRUE,stat = 'identity', scale = as.integer(${scale}), rel_min_height = 0.01, alpha=as.numeric(${alpha}), color = 'NA')+
             theme_ridges(grid = FALSE)+
             scale_x_continuous(expand = c(0.01,0))+ # 扩展下横轴和纵轴
             scale_y_discrete(expand = c(0.01,0)) +
