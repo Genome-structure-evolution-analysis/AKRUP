@@ -31,7 +31,7 @@ Include "bottom-up" inferences of ancestral karyotypes and "top-down" inferences
 - Python (>3.7) with matplotlib, *biopython*, *click*,  *numpy*，*pandas*, and *scipy* libraries.
   **Note that the current version no longer supports python 2.**
 
-- R with the ggridges and *ggplot2* packages.
+- R with the ggridges, forcats and *ggplot2* packages.
 
 - perl with the *[BioPerl](https://metacpan.org/pod/BioPerl)*  packages.
 
