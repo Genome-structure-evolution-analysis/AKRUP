@@ -61,5 +61,4 @@ Include "bottom-up" inferences of ancestral karyotypes and "top-down" inferences
 
 If you use AKRUP for  your work, please cite:
 
-## AKRUP software communication Group：908533463
 
